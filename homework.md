@@ -1,0 +1,2 @@
+# Homework 1: Boot xv6
+The breakpoint is right at we enter entry. Similar to lab 1 exercise 9, the stack top is the return address (next instruction after we call entry). Next there are 7 `0x0`, which are 3 reserved spaces for local variables, `%edi, %esi, %ebx`, and the caller's `%ebp`, which is `0x0`. Then it's the return address of calling `bootmain`. The stack grows from `0x7c00`, so anything after `0x7bfc` is random.
