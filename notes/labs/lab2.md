@@ -10,6 +10,19 @@ Need physical memory allocation to store page tables for later virtual memory im
 `page_alloc()` and `page_free()`. Just pop from and push into the `page_free_list`. Not changing the `pp_ref`, and take care of `pp_link`.
 
 # Part 2: Virtual Memory
+The segment descriptors have fields BASE, which defines the location of the segment within the 4G linear address space. The processor concatenate three fragments to form a single 32-bit value. \
+The field LIMIT defines the size of the segment, which could be concatenated from two fragments and form a 20-bit value. If this is for one-byte unit, the limit is 1MB. If the unit is 4KB, the limit is 4GB. This granularity is specified by the granularity bit in the descriptor, when set the unit size is 4KB. \
+The field TYPE distinguishes between various kinds of descriptors. \
+The field DPL is used for protection. \
+The Segment-Present bit indicates whether the descriptor is valid for address tranformation. The process will signal an exception if this bit is zero. Most of the descriptor then could be marked AVAILABLE and free to use. When the linear address isnot mapped by paging mechanism or the segment is not present in memory, this could be the case.\
+The Accessed bit is set when a selector for the descriptor is loaded into a segment register or used by a selector test instruction.
+
+There are two kinds of descriptor tables: the global descriptor table (GDT) and local descriptor tables (LDT). Such a table is an array of 64-bit entries containing descriptors. The processor locates the GDT and the current LDT by the GDTR and LDTR registers, which store base addresses of the tables in linear address space and segment limits.
+
+The selector of a logical address identifies a descriptor by specifying a descriptor table and indexing a descriptor in it. The value of selectors are usually assigned by linkers or loaders. The 16-bit selector use its high 13 bits for indexing (which means there are at most 8192 entries in one descriptor table). Bit 2 indicates whether this selector refers to GDT or the current LDT. Bit 1-0 (RPL) is used for protection mechanism. The first entry is not used by the processor and the corresponding selector can be used as a null selector and later useful for initializing unused segment registers so as to trap accidental references.
+
+Segment registers stores information from descriptors. The visible part are manipulated as a 16-bit register by programs. The invisible part is manipulated by processors. Using load instructions (MOV, POP, LDS, CALL, JMP, etc.) a program loads the visible part with a 16-bit selector and the processor fetches the corresponding descriptor information into the invisible part.
+
 ## Virtual, Linear, and Physical Addresses
 The virtual address is translated into linear address by segmentation mechanism. The linear address is translated into physical address by paging mechanism. Here we only focus on paging.
 
