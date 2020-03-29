@@ -12,8 +12,8 @@ Need physical memory allocation to store page tables for later virtual memory im
 # Part 2: Virtual Memory
 The segment descriptors have fields BASE, which defines the location of the segment within the 4G linear address space. The processor concatenate three fragments to form a single 32-bit value. \
 The field LIMIT defines the size of the segment, which could be concatenated from two fragments and form a 20-bit value. If this is for one-byte unit, the limit is 1MB. If the unit is 4KB, the limit is 4GB. This granularity is specified by the granularity bit in the descriptor, when set the unit size is 4KB. \
-The field TYPE distinguishes between various kinds of descriptors. \
-The field DPL is used for protection. \
+The field TYPE distinguishes between various kinds of descriptors. For applications and data segments this is a 3-bit field followed by the Accessed bit. For system segments this is a 4-bit field. \
+The 2-bit field DPL is used for protection. \
 The Segment-Present bit indicates whether the descriptor is valid for address tranformation. The process will signal an exception if this bit is zero. Most of the descriptor then could be marked AVAILABLE and free to use. When the linear address isnot mapped by paging mechanism or the segment is not present in memory, this could be the case.\
 The Accessed bit is set when a selector for the descriptor is loaded into a segment register or used by a selector test instruction.
 
