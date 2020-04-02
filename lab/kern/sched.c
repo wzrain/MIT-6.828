@@ -37,13 +37,15 @@ sched_yield(void)
 		}
 	}
 	else {
-		idle = curenv->env_link;
-		while (curenv != idle) {
-			if (!idle) idle = &envs[0];
-			if (idle->env_status == ENV_RUNNABLE) {
-				env_run(idle);
+		envid_t idx = ENVX(curenv->env_id) + 1;
+		while (ENVX(curenv->env_id) != idx) {
+			if (idx >= NENV) idx = 0;
+			else {
+				if (envs[idx].env_status == ENV_RUNNABLE) {
+					env_run(&envs[idx]);
+				}
+				idx++;
 			}
-			idle = idle->env_link;
 		}
 		if (curenv->env_status == ENV_RUNNING) {
 			env_run(curenv);
