@@ -35,7 +35,7 @@ VMA (link address, where the section expects to execute), LMA (load address, whe
 Several program headers specify which parts of ELF object to load and destination address ("LOAD"). In `boot/main.c` it's `ph->p_pa`.
 
 ### Exercise 5
-The program will be stuck in the `ljmp` instruction to switch into protected mode. The gdt was loaded wrong, and the `ljmp` will go to a wrong instruction.
+The program will be stuck in the `ljmp` instruction to switch into protected mode. The gdt was loaded wrong (the program is loaded right according to BIOS, but the gdt is loaded (`lgdtw`) according to where the program "thinks" it locates, which is the wrong address), and the `ljmp` will go to a wrong instruction.
 
 ### Exercise 6
 `x /Nx ADDR` prints `N` words of memory at `ADDR`. In the first breakpoint when the boot loader started, 0x100000, which is the start address of extended memory, stores nothing. After the second breakpoint when we entered kernel, there are something in the memory. Probably the loaded kernel loaded by boot loader.
