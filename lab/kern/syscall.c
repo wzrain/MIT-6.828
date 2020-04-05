@@ -288,7 +288,29 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	// panic("sys_ipc_try_send not implemented");
+	struct Env *dstenv;
+	if (envid2env(envid, &dstenv, 0) < 0) return -E_BAD_ENV;
+	if (!dstenv->env_ipc_recving) return -E_IPC_NOT_RECV;
+	if ((uint32_t)srcva < UTOP) {
+		if (ROUNDDOWN(srcva, PGSIZE) != srcva) return -E_INVAL;
+		if ((perm & PTE_U) == 0 || (perm & PTE_P) == 0 || (perm & (~PTE_SYSCALL))) return -E_INVAL;
+		pte_t* pte_store;
+		struct PageInfo* pg  = page_lookup(curenv->env_pgdir, srcva, &pte_store);
+		if (!pg) return -E_INVAL;
+		if ((perm & PTE_W) && !(*pte_store & PTE_W)) return -E_INVAL;
+		if ((uint32_t)(dstenv->env_ipc_dstva) < UTOP &&
+			page_insert(dstenv->env_pgdir, pg, dstenv->env_ipc_dstva, perm) < 0) return -E_NO_MEM;
+	}
+	
+	dstenv->env_ipc_recving = 0;
+	dstenv->env_ipc_from = curenv->env_id;
+	dstenv->env_ipc_value = value;
+	dstenv->env_ipc_perm = ((uint32_t)(dstenv->env_ipc_dstva) < UTOP) ? perm : 0;
+	dstenv->env_status = ENV_RUNNABLE;
+	dstenv->env_tf.tf_regs.reg_eax = 0;
+
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -306,7 +328,16 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	// panic("sys_ipc_recv not implemented");
+	if ((uint32_t)dstva < UTOP && ROUNDDOWN(dstva, PGSIZE) != dstva) {
+		return -E_INVAL;
+	}
+	curenv->env_ipc_recving = 1;
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+
+	sched_yield();
+
 	return 0;
 }
 
@@ -342,6 +373,10 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_page_unmap(a1, (void *)a2);
 	case SYS_env_set_pgfault_upcall:
 		return sys_env_set_pgfault_upcall(a1, (void *)a2);
+	case SYS_ipc_recv:
+		return sys_ipc_recv((void *)a1);
+	case SYS_ipc_try_send:
+		return sys_ipc_try_send(a1, a2, (void *)a3, a4);
 	default:
 		return -E_INVAL;
 	}
