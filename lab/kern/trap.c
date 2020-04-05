@@ -95,6 +95,23 @@ trap_init(void)
 
 	void handler48();
 
+	void handler32();
+	void handler33();
+	void handler34();
+	void handler35();
+	void handler36();
+	void handler37();
+	void handler38();
+	void handler39();
+	void handler40();
+	void handler41();
+	void handler42();
+	void handler43();
+	void handler44();
+	void handler45();
+	void handler46();
+	void handler47();
+
 	SETGATE(idt[0], 1, GD_KT, handler0, 0);
 	SETGATE(idt[1], 1, GD_KT, handler1, 0);
 	SETGATE(idt[2], 1, GD_KT, handler2, 0);
@@ -109,7 +126,7 @@ trap_init(void)
 	SETGATE(idt[11], 1, GD_KT, handler11, 0);
 	SETGATE(idt[12], 1, GD_KT, handler12, 0);
 	SETGATE(idt[13], 1, GD_KT, handler13, 0);
-	SETGATE(idt[14], 1, GD_KT, handler14, 0);
+	SETGATE(idt[14], 0, GD_KT, handler14, 0);
 
 	SETGATE(idt[16], 1, GD_KT, handler16, 0);
 	SETGATE(idt[17], 1, GD_KT, handler17, 0);
@@ -117,6 +134,23 @@ trap_init(void)
 	SETGATE(idt[19], 1, GD_KT, handler19, 0);
 
 	SETGATE(idt[48], 0, GD_KT, handler48, 3);
+
+	SETGATE(idt[32], 0, GD_KT, handler32, 3);
+	SETGATE(idt[33], 0, GD_KT, handler33, 3);
+	SETGATE(idt[34], 0, GD_KT, handler34, 3);
+	SETGATE(idt[35], 0, GD_KT, handler35, 3);
+	SETGATE(idt[36], 0, GD_KT, handler36, 3);
+	SETGATE(idt[37], 0, GD_KT, handler37, 3);
+	SETGATE(idt[38], 0, GD_KT, handler38, 3);
+	SETGATE(idt[39], 0, GD_KT, handler39, 3);
+	SETGATE(idt[40], 0, GD_KT, handler40, 3);
+	SETGATE(idt[41], 0, GD_KT, handler41, 3);
+	SETGATE(idt[42], 0, GD_KT, handler42, 3);
+	SETGATE(idt[43], 0, GD_KT, handler43, 3);
+	SETGATE(idt[44], 0, GD_KT, handler44, 3);
+	SETGATE(idt[45], 0, GD_KT, handler45, 3);
+	SETGATE(idt[46], 0, GD_KT, handler46, 3);
+	SETGATE(idt[47], 0, GD_KT, handler47, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -262,6 +296,11 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+		lapic_eoi();
+		sched_yield();
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
