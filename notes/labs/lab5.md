@@ -86,3 +86,22 @@ If we want to share file descriptor state across `fork()` and `spawn()`, but the
 We define `PTE_SHARE` bit (`0x400`), which is one of the `PTE_SYSCALL` bits. If this bit is set, then the page table entry will be directly copied in both `fork()` and `spawn()`, which means we share the same page. 
 ### Exercise 8
 In `lib/fork.c` we add `PTE_SHARE` check and just simply copy the whole page with the `PTE_SYSCALL` bits. In `lib/spawn.c` we go through the entire user space the copy every page table entry that has `PTE_SHARE` set. 
+
+# The keyboard interface
+We need a way to type for the shell to work. So far we've only taken input while in the kernel monitor. `kern/console.c` contains the keyboard and serial drivers, and we need to attach these to the rest of the system (?).
+### Exercise 9
+Just dispatch the `IRQ_KBD` by calling `kbd_intr()` and `IRQ_SERIAL` by `serial_intr()` in `trap_dispatch()`.
+
+`kbd_intr()` and `serial_intr()` fill a buffer with the recently read input while the consol file type consumes the buffer (?).
+
+# The Shell
+`user/icode.c` will setup the console as file descriptors 0 and 1 (stdin and stdout). It will spawn `user/sh.c`, which is the shell. \
+The library routine `cprintf` prints straight to the console without using the descriptor code. To print output to a particular file descriptor, use `fprintf(1, "...", ...)` for stdout (file descriptor 1). `printf("...", ...)` is a shortcut. 
+### Exercise 10
+It would be nice to redirect I/O in the shell. For input redirection, we first open the corresponding file `t` and try to open it onto the file descriptor 0 for stdin. If the file descriptor is not 0, just duplicate the file descriptor to 0 and close the previous one.
+
+read pipes consoles 
+how the file path things work
+shell impl 
+spawn impl
+kbd_intr serial_intr
