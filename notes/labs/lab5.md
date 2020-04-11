@@ -73,3 +73,16 @@ In `serve_read()` we need an `OpenFile` to find the already-open file according 
 After the handler returns the file system sends the return code of the handler back to the user environment. If it's an open operation it will also send a page of the new file descriptor of the open file (`open()` in `lib/file.c` calls `fsipc()` with a nonnull `dstva`).
 ### Exercise 6
 This is similar to `serve_read()` and `devfile_read()`. `serve_write()` finds the corresponding `OpenFile` structure and write to the file with `req_n` as the number bytes to write and `req_buf` as the content to write. Update the offset as well. `devfile_write()` sets the global `fsipcbuf`. The `buf` pointer should be `memmove`d into the `req_buf`.
+
+# Spawning Processes
+`spawn` creates a new environment, loads a program image from the file system and then starts the child environment to run this program. The parent continues running independently of the child. This is like a `fork()` immediately followed by `exec()` in the child. The `spawn` is easier to implement in user space than `exec` (?).
+### Exercise 7
+Use `user_mem_assert()` to check whether the input `tf` is valid. Get the corresponding environment with `envid2env()`. The `FL_IF` bit in `tf_eflags` should be set. `FL_IOPL` should be set to 0. The CPL is represented by RPL in the segment selector, which means we need to set `tf_cs`'s RPL to 3 (?).
+
+## Sharing library state across fork and spawn
+The file descriptor can also emcompass pipes and console I/O. Here we use `struct Dev` with pointers to functions to represent the device type. `lib/fd.c` provides general interfaces on top of this. Each `struct Fd` indicates the device type and the general functions dispatch operations to device-specific functions. \
+`lib/fd.c` also has a file descriptor table region in each application environment's address (?), starting at `FDTABLE` (`0xd0000000`). This area reserves a page for each file descriptor (up to 32 (`MAXFD`)) the application can open at once (The `opentab` in `fs/serv.c` stores up to 1024 (`MAXOPEN`) `OpenFile` structures for open files in the file system). \
+If we want to share file descriptor state across `fork()` and `spawn()`, but the file descriptor is in user memory. So `fork()` will copy the state when it's written rather than share. This means environments won't be able to seek in files they didn't open themselves and pipes won't work across a fork (?). The `spawn` will leave behind the memory. The spawned environment starts with no open file descriptors. \
+We define `PTE_SHARE` bit (`0x400`), which is one of the `PTE_SYSCALL` bits. If this bit is set, then the page table entry will be directly copied in both `fork()` and `spawn()`, which means we share the same page. 
+### Exercise 8
+In `lib/fork.c` we add `PTE_SHARE` check and just simply copy the whole page with the `PTE_SYSCALL` bits. In `lib/spawn.c` we go through the entire user space the copy every page table entry that has `PTE_SHARE` set. 
