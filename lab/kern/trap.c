@@ -115,7 +115,7 @@ trap_init(void)
 	SETGATE(idt[0], 1, GD_KT, handler0, 0);
 	SETGATE(idt[1], 1, GD_KT, handler1, 0);
 	SETGATE(idt[2], 1, GD_KT, handler2, 0);
-	SETGATE(idt[3], 1, GD_KT, handler3, 3);
+	SETGATE(idt[3], 0, GD_KT, handler3, 3);
 	SETGATE(idt[4], 1, GD_KT, handler4, 0);
 	SETGATE(idt[5], 1, GD_KT, handler5, 0);
 	SETGATE(idt[6], 1, GD_KT, handler6, 0);
@@ -125,7 +125,7 @@ trap_init(void)
 	SETGATE(idt[10], 1, GD_KT, handler10, 0);
 	SETGATE(idt[11], 1, GD_KT, handler11, 0);
 	SETGATE(idt[12], 1, GD_KT, handler12, 0);
-	SETGATE(idt[13], 1, GD_KT, handler13, 0);
+	SETGATE(idt[13], 0, GD_KT, handler13, 0);
 	SETGATE(idt[14], 0, GD_KT, handler14, 0);
 
 	SETGATE(idt[16], 1, GD_KT, handler16, 0);

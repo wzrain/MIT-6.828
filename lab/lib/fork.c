@@ -71,6 +71,12 @@ duppage(envid_t envid, unsigned pn)
 	// LAB 4: Your code here.
 	// panic("duppage not implemented");
 	void *addr = (void *)(pn * PGSIZE);
+	int shareperm = uvpt[pn] & PTE_SYSCALL;
+	if (shareperm & PTE_SHARE) {
+		r = sys_page_map(thisenv->env_id, addr, envid, addr, shareperm);
+		if (r < 0) panic("duppage: map to child failed\n");
+		return 0;
+	}
 	int perm = uvpt[pn] & 0xfff, newperm = PTE_P | PTE_U;
 	if ((perm & PTE_W) || (perm & PTE_COW)) newperm |= PTE_COW;
 	r = sys_page_map(thisenv->env_id, addr, envid, addr, newperm);

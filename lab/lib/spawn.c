@@ -302,6 +302,15 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 5: Your code here.
+	for (uint32_t addr = UTEXT; addr < USTACKTOP; addr += PGSIZE) {
+		if ((uvpd[(addr >> 22) & 0x3ff] & PTE_P) && (uvpt[addr >> 12] & PTE_P)) {
+			if (uvpt[addr >> 12] & PTE_SHARE) {
+				if (sys_page_map(thisenv->env_id, (void *)addr, child, (void *)addr, uvpt[addr >> 12] & PTE_SYSCALL) < 0) {
+					panic("copy_shared_pages: copy mapping failed\n");
+				}
+			}
+		}
+	}
 	return 0;
 }
 
