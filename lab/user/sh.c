@@ -57,6 +57,10 @@ again:
 			// LAB 5: Your code here.
 			// panic("< redirection not implemented");
 			fd = open(t, O_RDONLY);
+			if (fd < 0) {
+				cprintf("open %s for write: %e", t, fd);
+				exit();
+			}
 			if (fd != 0) {
 				dup(fd, 0);
 				close(fd);
