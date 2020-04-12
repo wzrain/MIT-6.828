@@ -79,6 +79,11 @@ This is similar to `serve_read()` and `devfile_read()`. `serve_write()` finds th
 ### Exercise 7
 Use `user_mem_assert()` to check whether the input `tf` is valid. Get the corresponding environment with `envid2env()`. The `FL_IF` bit in `tf_eflags` should be set. `FL_IOPL` should be set to 0. The CPL is represented by RPL in the segment selector, which means we need to set `tf_cs`'s RPL to 3 (?).
 
+We need this system call to modify the `Trapframe` of the child environment. The `fork()` does not need this because the child from `fork()` should have basically the same `Trapframe` as the parent except for the return value, which is set in `sys_exofork()`. Here we need to set the new `eip` for the child since it will execute some other programs and the new `esp` since it will not *continue* to execute something but *start* a new execution. Note that we get the `Trapframe` from the `envs` array, which is mapped at `UENVS` readonly. So we cannot directly change the value, but have to use such a syscall.\
+The `eip` is set as the `elf->e_entry` read from the program. `init_stack()` is used for initializing the child's user stack, which takes the argument strings for the new execution from `spawn()`. It first get the address (`string_store`) for the actual argument strings into a temporary "stack" at `UTEMP`, and then get the address (`argv_store`) for pointers (32-bit `uintptr_t`) for each of the string, and then check whether there are two more spaces for `argc` and `argv` (the pointer to pointers to strings) themselves in a page. After allocating a new page at `UTEMP`, we set the value of pointers to strings (`argv_store[i]`) to the actual address in `USTACK` after we finish, and copy the strings (from `argv[i]`) to the address of strings `string_store[i] + 1` (for `'\0'`). Then also set the `argv` (the one below `argv_store`, which is `argv_store[-1]`) to the actual address in `USTACK` and set the `argc`. The `esp` points to the actual address of the `argc`. Then just map the `UTEMP` to the child address space's `USTACKTOP - PGSIZE` and unmap in the current environment. \
+We also need to set the segments of the program via `map_segment` (which basically is a counterpart of `memcpy` in `load_icode()` of `kern/env.c` back in lab 3, but should read from the program and store it at `UTEMP` and then map it to the child), and copy shared pages via `copy_shared_pages()`. Then finally we use the syscall to set the `Trapframe` we modified earlier and also set the status for the child to make it runnable. \
+`spawnl()` could be used for variable arguments, which set up the `argv` with input arguments and call `spawn()`.
+
 ## Sharing library state across fork and spawn
 The file descriptor can also emcompass pipes and console I/O. Here we use `struct Dev` with pointers to functions to represent the device type. `lib/fd.c` provides general interfaces on top of this. Each `struct Fd` indicates the device type and the general functions dispatch operations to device-specific functions. \
 `lib/fd.c` also has a file descriptor table region in each application environment's address (?), starting at `FDTABLE` (`0xd0000000`). This area reserves a page for each file descriptor (up to 32 (`MAXFD`)) the application can open at once (The `opentab` in `fs/serv.c` stores up to 1024 (`MAXOPEN`) `OpenFile` structures for open files in the file system). \
@@ -100,8 +105,8 @@ The library routine `cprintf` prints straight to the console without using the d
 ### Exercise 10
 It would be nice to redirect I/O in the shell. For input redirection, we first open the corresponding file `t` and try to open it onto the file descriptor 0 for stdin. If the file descriptor is not 0, just duplicate the file descriptor to 0 and close the previous one.
 
-read pipes consoles 
-how the file path things work
+read pipes consoles \
+how the file path things work  serve_open etc.\
 shell impl 
-spawn impl
+
 kbd_intr serial_intr
